@@ -292,32 +292,21 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {studySessions.map((session) => (
-              <Card key={session.id} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg line-clamp-2">{session.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{session.study_level}</p>
-                  </div>
+              <Card key={session.id} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow relative group">
+                <Link href={`/dashboard/session/${session.id}`} className="absolute inset-0 z-10" />
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-lg">{session.title}</h3>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 hover:bg-transparent"
+                    className="h-8 w-8 p-0 hover:bg-transparent relative z-20"
                     onClick={() => setSessionToDelete(session.id)}
                   >
                     <Trash2 className="h-5 w-5 text-gray-400 hover:text-red-500" />
                   </Button>
                 </div>
-                
-                <p className="text-sm text-gray-600 line-clamp-2 mb-3">{session.description}</p>
-                
-                {session.learning_goals && (
-                  <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-700">Learning Goals:</p>
-                    <p className="text-sm text-gray-600 line-clamp-2">{session.learning_goals}</p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mt-4 pt-4 border-t">
+                <p className="text-sm text-gray-600 line-clamp-3 mb-4">{session.description}</p>
+                <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t">
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     <span>{format(new Date(session.created_at), 'MMM d, yyyy')}</span>
