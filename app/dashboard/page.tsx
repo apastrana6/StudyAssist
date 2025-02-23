@@ -22,6 +22,7 @@ import { format } from "date-fns"
 
 type StudySession = {
   id: string
+  title: string
   description: string
   study_level: string
   learning_goals: string
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [showNewSession, setShowNewSession] = useState(false)
   const [studySessions, setStudySessions] = useState<StudySession[]>([])
   const [formData, setFormData] = useState({
+    title: "",
     description: "",
     studyLevel: "",
     learningGoals: "",
@@ -133,6 +135,16 @@ export default function Dashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!formData.title.trim()) {
+      toast.error("Please provide a title for your study session")
+      return
+    }
+
+    if (formData.title.length > 30) {
+      toast.error("Title must be 30 characters or less")
+      return
+    }
+
     if (!formData.description.trim()) {
       toast.error("Please provide a description of what you're studying for")
       return
@@ -151,6 +163,7 @@ export default function Dashboard() {
         .from("study_sessions")
         .insert({
           user_id: user.id,
+          title: formData.title,
           description: formData.description,
           study_level: formData.studyLevel,
           learning_goals: formData.learningGoals,
@@ -172,6 +185,7 @@ export default function Dashboard() {
       setStudySessions(sessions || [])
       setShowNewSession(false)
       setFormData({
+        title: "",
         description: "",
         studyLevel: "",
         learningGoals: "",
@@ -281,7 +295,7 @@ export default function Dashboard() {
               <Card key={session.id} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg line-clamp-2">{session.description}</h3>
+                    <h3 className="font-semibold text-lg line-clamp-2">{session.title}</h3>
                     <p className="text-sm text-gray-500 mt-1">{session.study_level}</p>
                   </div>
                   <Button
@@ -293,6 +307,8 @@ export default function Dashboard() {
                     <Trash2 className="h-5 w-5 text-gray-400 hover:text-red-500" />
                   </Button>
                 </div>
+                
+                <p className="text-sm text-gray-600 line-clamp-2 mb-3">{session.description}</p>
                 
                 {session.learning_goals && (
                   <div className="mb-3">
@@ -330,6 +346,26 @@ export default function Dashboard() {
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-4">
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="title" className="text-base">
+                  Session Title{" "}
+                  <span className="text-red-500">*</span>
+                  <span className="text-sm text-gray-500 ml-1">
+                    (max 30 characters)
+                  </span>
+                </Label>
+                <Input
+                  id="title"
+                  name="title"
+                  required
+                  maxLength={30}
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder="E.g., Calculus Final Prep"
+                  className="mt-1.5"
+                />
+              </div>
+
               <div>
                 <Label htmlFor="description" className="text-base">
                   What are you studying for?{" "}

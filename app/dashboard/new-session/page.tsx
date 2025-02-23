@@ -22,6 +22,7 @@ export default function NewSession() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
+    title: "",
     description: "",
     studyLevel: "",
     learningGoals: "",
@@ -44,6 +45,16 @@ export default function NewSession() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!formData.title.trim()) {
+      toast.error("Please provide a title for your study session")
+      return
+    }
+
+    if (formData.title.length > 30) {
+      toast.error("Title must be 30 characters or less")
+      return
+    }
+
     if (!formData.description.trim()) {
       toast.error("Please provide a description of what you're studying for")
       return
@@ -62,6 +73,7 @@ export default function NewSession() {
         .from("study_sessions")
         .insert({
           user_id: user.id,
+          title: formData.title,
           description: formData.description,
           study_level: formData.studyLevel,
           learning_goals: formData.learningGoals,
@@ -106,6 +118,26 @@ export default function NewSession() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title" className="text-base">
+                    Session Title{" "}
+                    <span className="text-red-500">*</span>
+                    <span className="text-sm text-gray-500 ml-1">
+                      (max 30 characters)
+                    </span>
+                  </Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    required
+                    maxLength={30}
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    placeholder="E.g., Calculus Final Prep"
+                    className="mt-1.5"
+                  />
+                </div>
+
                 <div>
                   <Label htmlFor="description" className="text-base">
                     What are you studying for?{" "}
