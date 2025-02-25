@@ -4,12 +4,14 @@ import { useEffect, useState, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ArrowLeft, Send } from "lucide-react"
+import { ArrowLeft, Send, RefreshCw, User, Bot } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
+import { Avatar } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
 
 type Message = {
   role: 'user' | 'assistant'
@@ -38,6 +40,7 @@ export default function StudySessionChat() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -90,7 +93,11 @@ export default function StudySessionChat() {
   useEffect(() => {
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    // Focus input after message is sent
+    if (!sending) {
+      inputRef.current?.focus()
+    }
+  }, [messages, sending])
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -125,30 +132,41 @@ export default function StudySessionChat() {
     }
   }
 
+  // Format message with markdown-style formatting
+  const formatMessage = (content: string) => {
+    return content.split('\n').map((line, i) => (
+      <p key={i} className={i > 0 ? 'mt-4' : ''}>{line}</p>
+    ))
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-blue-600">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex items-center space-x-2">
+          <RefreshCw className="h-5 w-5 animate-spin text-blue-600" />
+          <span>Loading your study session...</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <header className="p-4 border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+    <div className="flex flex-col h-screen bg-white">
+      {/* Header */}
+      <header className="border-b bg-white sticky top-0 z-10 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <Link 
               href="/dashboard"
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-md hover:bg-gray-100"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-lg font-medium text-gray-900">
                 {session?.title}
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 line-clamp-1">
                 {session?.description}
               </p>
             </div>
@@ -156,56 +174,97 @@ export default function StudySessionChat() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4">
-        <Card className="h-[calc(100vh-12rem)] flex flex-col bg-white/80 backdrop-blur-sm">
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                    <p className="text-xs mt-1 opacity-70">
-                      {message.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                    </p>
+      {/* Chat Container */}
+      <div className="flex-1 overflow-hidden flex flex-col max-w-4xl w-full mx-auto px-4">
+        <ScrollArea className="flex-1 pt-4 pb-32">
+          <div className="space-y-6 max-w-3xl mx-auto">
+            {messages.map((message, index) => (
+              <div key={index} className="group">
+                <div className="flex items-start space-x-3 px-4 py-2">
+                  {/* Avatar */}
+                  <div className="flex-shrink-0 mt-1">
+                    <Avatar className={message.role === 'assistant' 
+                      ? 'bg-blue-600 text-white flex items-center justify-center' 
+                      : 'bg-blue-600 text-white flex items-center justify-center'}>
+                      {message.role === 'assistant' 
+                        ? <Bot className="h-5 w-5" /> 
+                        : <User className="h-5 w-5" />}
+                    </Avatar>
+                  </div>
+                  
+                  {/* Message content */}
+                  <div className="flex-1 space-y-1.5">
+                    <div className="text-sm font-medium text-gray-900">
+                      {message.role === 'assistant' ? 'Study Assistant' : 'You'}
+                    </div>
+                    <div className="text-gray-800 prose prose-sm">
+                      {formatMessage(message.content)}
+                    </div>
                   </div>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
+                
+                {/* Add subtle separation between messages */}
+                {index < messages.length - 1 && (
+                  <div className="pt-4">
+                    <Separator className="max-w-3xl mx-auto opacity-30" />
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {sending && (
+              <div className="text-gray-500 flex items-center px-4 py-2 ml-14">
+                <div className="flex space-x-1.5">
+                  <span className="animate-pulse h-2 w-2 bg-gray-400 rounded-full"></span>
+                  <span className="animate-pulse delay-150 h-2 w-2 bg-gray-400 rounded-full"></span>
+                  <span className="animate-pulse delay-300 h-2 w-2 bg-gray-400 rounded-full"></span>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} className="h-4" />
+          </div>
+        </ScrollArea>
+      </div>
 
-          <form
-            onSubmit={handleSendMessage}
-            className="p-4 border-t bg-white flex items-center space-x-2"
-          >
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1"
-              disabled={sending}
-            />
-            <Button
-              type="submit"
-              disabled={!input.trim() || sending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
-          </form>
-        </Card>
-      </main>
+      {/* Input Area - Fixed at bottom */}
+      <div className="border-t bg-white sticky bottom-0 z-10 px-4 py-3">
+        <div className="max-w-3xl mx-auto">
+          <div className="border border-gray-300 rounded-md flex items-stretch overflow-hidden">
+            <div className="flex-1 flex items-center">
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Send a message..."
+                className="border-0 shadow-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-12 px-4 w-full"
+                disabled={sending}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (input.trim() && !sending) {
+                      handleSendMessage(e as any);
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div className="border-l border-gray-300 flex items-center justify-center">
+              <Button
+                onClick={handleSendMessage}
+                type="button"
+                disabled={!input.trim() || sending}
+                className="h-12 w-12 rounded-none bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="mt-2 text-xs text-center text-gray-500">
+            Study Assistant may generate inaccurate information. Consider verifying important information.
+          </div>
+        </div>
+      </div>
     </div>
   )
 } 
